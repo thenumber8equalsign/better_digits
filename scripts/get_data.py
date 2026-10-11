@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-import struct
-
 from tensorflow.keras.datasets import mnist
+import struct
 
 (train_image, train_label), (test_image, test_label) = mnist.load_data()
 

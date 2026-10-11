@@ -10,7 +10,7 @@ EXE := $(BUILD_DIR)/recognize
 
 include $(RULES)
 
-all: init _build_dir _src
+all: _build_dir _src
 	$(CC) $(BUILD_DIR)/*.o -o $(EXE)
 
 clean:
