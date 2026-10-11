@@ -1,4 +1,4 @@
-.PHONY: all clean _build_dir _src
+.PHONY: all clean _build_dir _src init
 
 export CC = gcc
 export CFLAGS = -std=c99 -O2
@@ -10,7 +10,7 @@ EXE := $(BUILD_DIR)/recognize
 
 include $(RULES)
 
-all: _build_dir _src
+all: init _build_dir _src
 	$(CC) $(BUILD_DIR)/*.o -o $(EXE)
 
 clean:
@@ -21,3 +21,8 @@ _src:
 
 _build_dir:
 	mkdir -p $(BUILD_DIR)
+
+init:
+	mkdir -p testing_data
+	mkdir -p training_data
+	python scripts/get_data.py
