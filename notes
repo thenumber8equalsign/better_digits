@@ -1,0 +1,5 @@
+get_nprocs(3) provided by glibc is literally just the nproc command
+	but don't call too much cuz its expensive cuz it opens and parses files
+	in /sys
+
+eventually switch to opencl for matrix multiplication
