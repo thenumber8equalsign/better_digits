@@ -1,0 +1,3 @@
+-I./include/
+-xc
+-std=c99
