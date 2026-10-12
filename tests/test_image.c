@@ -71,7 +71,10 @@ int main(void)
 
 	for (size_t i = 0; i < 28; ++i) {
 		for (size_t j = 0; j < 28; ++j) {
-			printf("%3d ", (int)data[i * 28 + j]);
+			if (!data[i * 28 + j])
+				printf("  ");
+			else
+				printf("Q ");
 		}
 		printf("\n");
 	}
