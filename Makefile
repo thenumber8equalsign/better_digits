@@ -1,4 +1,4 @@
-.PHONY: all clean _build_dir _src init tests
+.PHONY: all clean _build_dir _src init
 
 export CC = gcc
 export CFLAGS = -std=c99 -O2
@@ -20,7 +20,6 @@ data:
 clean:
 	-rm -r $(BUILD_DIR)
 	-rm -r data
-
 _src:
 	make -C src/ all
 
