@@ -3,6 +3,7 @@
 
 #include <config.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #define DIMENSION_ERROR 1
 
@@ -21,6 +22,8 @@ int matrix_multiply(struct matrix *result, const struct matrix *a,
 
 int matrix_add(struct matrix *result, const struct matrix *a,
 	       const struct matrix *b);
+
+int matrix_in_place_add(struct matrix *a, const struct matrix *b);
 
 static inline double matrix_get(const struct matrix *mat, size_t r, size_t c)
 {

@@ -3,6 +3,9 @@
 #include <stddef.h>
 #include <math.h>
 
+#define IMAGE_WIDTH (28)
+#define IMAGE_HEIGHT (28)
+
 static inline double sigmoid(double x)
 {
 	return 1.0 / (1.0 + exp(-x));
@@ -23,7 +26,7 @@ struct layer {
 };
 
 /**
- * struct model - the model (it's literally just an array of layers)
+ * struct model - the model (it's just an array of layers)
  * @layers: the array of layers
  * @N: the number of layers
  */
@@ -39,21 +42,29 @@ struct model {
  */
 struct image {
 	char label;
-	double img[28][28];
+	double img[IMAGE_HEIGHT][IMAGE_WIDTH];
 };
 
 /**
  * layer_init() - initializer a layer
  * @l: the layer to initialize
  * @N the number of neurons in this layer
- * @prev_N: the number of neurons in the previous layer
+ * @prev_n: the number of neurons in the previous layer, or 0
  *
  * this function initializes a layer's matricies and its values
  * everything is initalized to zero
  *
+ * if @prev_n is 0, weights and biases will not be initialized, and set to NULL
+ *
  * Return: 0 for success, -1 on error
  */
 int layer_init(struct layer *l, size_t n, size_t prev_n);
+
+/**
+ * layer_free() - this does exactly what you think it does
+ * @l: the layer
+ */
+void layer_free(struct layer *l);
 
 /**
  * layer_compute() - compute the neurons of a layer

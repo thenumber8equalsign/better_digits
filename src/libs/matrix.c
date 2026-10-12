@@ -23,6 +23,7 @@ void matrix_free(struct matrix *mat)
 		free(mat->data);
 	mat->rows = 0;
 	mat->cols = 0;
+	mat->data = NULL;
 }
 
 int matrix_multiply(struct matrix *result, const struct matrix *a,
@@ -69,6 +70,24 @@ int matrix_add(struct matrix *result, const struct matrix *a,
 			const double _a = matrix_get(a, i, j);
 			const double _b = matrix_get(b, i, j);
 			matrix_set(result, i, j, _a + _b);
+		}
+	}
+	return 0;
+}
+
+int matrix_in_place_add(struct matrix *a, const struct matrix *b)
+{
+	if (a->cols != b->cols)
+		return DIMENSION_ERROR;
+
+	if (a->rows != b->rows)
+		return DIMENSION_ERROR;
+
+	for (size_t i = 0; i < a->rows; ++i) {
+		for (size_t j = 0; j < a->cols; ++j) {
+			const double _a = matrix_get(a, i, j);
+			const double _b = matrix_get(b, i, j);
+			matrix_set(a, i, j, _a + _b);
 		}
 	}
 	return 0;
