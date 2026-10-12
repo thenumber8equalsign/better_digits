@@ -1,0 +1,14 @@
+datasets from:
+https://www.nist.gov/itl/products-and-services/emnist-dataset
+
+extract the matlab.zip and place its contents in /emnist
+and then run `make all`
+I can't put the datasets here because they are too large for github
+
+the image format that the actual C program will use is as follows:
+
+byte 0: label (ASCII character code, NOT an integer (because letters)
+bytes [1, 7]: pad
+u64: height of image (Little-Endian)
+u64: width of image (Little-Endian)
+remaining width * height bytes, greyscale value out of 255, row-major order
