@@ -1,0 +1,9 @@
+byte 0:
+the integer label (not a char code)
+byte 1:
+width (always 28)
+byte 2:
+height (always 28)
+
+all other bytes:
+the current greyscale value, with the 2d array being flattened as rows
