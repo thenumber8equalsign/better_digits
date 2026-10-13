@@ -1,3 +1,5 @@
+#ifndef MODEL_H
+#define MODEL_H
 #include <config.h>
 #include <matrix.h>
 #include <stddef.h>
@@ -56,7 +58,7 @@ struct image {
  *
  * if @prev_n is 0, weights and biases will not be initialized, and set to NULL
  *
- * Return: 0 for success, -1 on error
+ * Return: 0 for success, nonzero on error
  */
 int layer_init(struct layer *l, size_t n, size_t prev_n);
 
@@ -73,7 +75,7 @@ void layer_free(struct layer *l);
  *
  * This function uses \sigma\left(x\right) = \frac{1}{1+e^{-x}}
  *
- * Return: 0 for success, -1 on error
+ * Return: 0 for success, nonzero on error
  */
 int layer_compute(struct layer *cur, const struct layer *prev);
 
@@ -83,16 +85,24 @@ int layer_compute(struct layer *cur, const struct layer *prev);
  * @num_neurons: the array of number of neurons in each layer
  * @n: the number of layers (also the length of the @num_neurons array)
  *
- * Return: 0 on success, -1 on failure
+ * Return: 0 on success, nonzero on error
  */
 int model_init(struct model *m, size_t *num_neurons, size_t n);
+
+/**
+ * model_params_init() - initialize the parameters
+ * @m the model
+ *
+ * Return: 0 on success, nonzero on error
+ */
+int model_params_init(struct model *m);
 
 /**
  * model_compute() - compute all the layers
  * @m: the model to compute
  * @img: the image to use as input
  *
- * Return: 0 for success, -1 on error
+ * Return: 0 for success, nonzero on error
  */
 int model_compute(struct model *m, const struct image *img);
 
@@ -102,6 +112,8 @@ int model_compute(struct model *m, const struct image *img);
  * @training_data: training data to use
  * @len: length of @training_data
  *
- * Return: 0 on success, -1 on error
+ * Return: 0 on success, nonzero on error
  */
 int model_train(struct model *m, struct image *training_data, size_t len);
+
+#endif

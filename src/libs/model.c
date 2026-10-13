@@ -94,6 +94,15 @@ error:
 	return -1;
 }
 
+int model_params_init(struct model *m)
+{
+	/* LeCun initialization: sample within x \in [-\sqrt{\frac{3}{n_{l-1}}},
+	 * 	+\sqrt{\frac{3}{n_{l-1}}}]
+	 * for a uniform random distribution
+	 */
+	return 0;
+}
+
 int model_compute(struct model *m, const struct image *img)
 {
 	ssize_t ret;

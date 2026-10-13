@@ -13,6 +13,14 @@ struct matrix {
 	size_t cols;
 };
 
+/**
+ * matrix_init() - initialize a matrix
+ * @mat: the matix
+ * @r: rows
+ * @c: cols
+ *
+ * Return: 0 on success, nonzero on error
+ */
 int matrix_init(struct matrix *mat, size_t r, size_t c);
 
 void matrix_free(struct matrix *mat);
