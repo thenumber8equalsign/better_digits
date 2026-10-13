@@ -4,6 +4,26 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <sys/random.h>
+#include <limits.h>
+
+/* floor a to a multiple of b */
+static inline unsigned long floor_to_multiple(unsigned long a, unsigned long b)
+{
+	a /= b;
+	a *= b;
+	return a;
+}
+
+/* generate within [0, max] */
+static inline unsigned long uniform_random(unsigned long max)
+{
+	unsigned long b;
+
+	max = floor_to_multiple(ULONG_MAX, max) - 1;
+	/* if num >= max, discard it */
+	return 0;
+}
 
 int layer_init(struct layer *l, size_t n, size_t prev_n)
 {
