@@ -13,6 +13,26 @@ static inline double sigmoid(double x)
 	return 1.0 / (1.0 + exp(-x));
 }
 
+static inline void vectorized_sigmoid(double *out, double *v, size_t len)
+{
+	for (size_t i = 0; i < len; ++i) {
+		out[i] = 1.0 / (1.0 + exp(-v[i]));
+	}
+}
+
+static inline double sigmoid_derivative(double x)
+{
+	return exp(-x) / (exp(-2 * x) + 2 * exp(-x) + 1);
+}
+
+static inline void vectorized_sigmoid_derivative(double *out, double *v,
+						 size_t len)
+{
+	for (size_t i = 0; i < len; ++i) {
+		out[i] = sigmoid_derivative(v[i]);
+	}
+}
+
 /**
  * struct layer - neural network layer
  * @weights: the weights
@@ -45,6 +65,39 @@ struct model {
 struct image {
 	char label;
 	double img[IMAGE_HEIGHT][IMAGE_WIDTH];
+};
+
+/**
+ * struct train_params - parameters to the model_train function
+ * @m: the model
+ * @training_data: the training data
+ * @training_len: length of @training_data array
+ * @derivatives: output for all derivates, format is as followed:
+ * 	each layer:
+ * 		flattened matrix weights, row major order
+ * 		biases
+ * 	... repeat for each layer
+ * 	must be long enough, length = total number weights and biases
+ * @errors: for use by the function, allows not calling malloc() in the function
+ * 	length must be at least total number of neurons (except for input layer)
+ * @transposed_weights: array of all the transpose matricies of the weights
+ * @indicies: array of all indicies into the @training_data array,
+ * 	should be of length @training_len, used for shuffling reasons
+ * 	(much easier to shuffle array of integers than it is an array of
+ * 	structs)
+ * @min: the minimum index into the array @indicies to start at
+ * @max: the (exclusive) maximum into the array @indicies
+ */
+struct train_params {
+	struct model *m;
+	const struct image *training_data;
+	const size_t training_len;
+	double *derivatives;
+	double *errors;
+	const struct matrix *transposed_weights;
+	const size_t *indicies;
+	const size_t min;
+	const size_t max;
 };
 
 /**
@@ -91,11 +144,28 @@ int model_init(struct model *m, size_t *num_neurons, size_t n);
 
 /**
  * model_params_init() - initialize the parameters
- * @m the model
+ * @m: the model
  *
  * Return: 0 on success, nonzero on error
  */
 int model_params_init(struct model *m);
+
+/**
+ * model_cost() - compute the cost for a given image
+ * @m: the model
+ * @img: the image
+ * @expctd: expected output
+ * @len: length of @expctd array; should be same as number of neurons in last
+ * 	layer
+ * @cost: will be set to the cost
+ *
+ * cost is the sum of the squares of the differences of expected output
+ * and received output
+ *
+ * Return: 0 on success, -1 on failure
+ */
+int model_cost(struct model *m, const struct image *img, const double *expctd,
+	       const size_t len, double *cost);
 
 /**
  * model_compute() - compute all the layers
@@ -108,12 +178,10 @@ int model_compute(struct model *m, const struct image *img);
 
 /**
  * model_train() - use backpropagation
- * @m: model to train
- * @training_data: training data to use
- * @len: length of @training_data
+ * @params: parameters (see above definition of the struct)
  *
  * Return: 0 on success, nonzero on error
  */
-int model_train(struct model *m, struct image *training_data, size_t len);
+int model_train(struct train_params *params);
 
 #endif
