@@ -33,6 +33,12 @@ static inline void vectorized_sigmoid_derivative(double *out, double *v,
 	}
 }
 
+static inline double sigmoid_inverse(double x)
+{
+	double (*ln)(double) = log;
+	return ln(x) - ln(1 - x);
+}
+
 /**
  * struct layer - neural network layer
  * @weights: the weights
@@ -71,7 +77,6 @@ struct image {
  * struct train_params - parameters to the model_train function
  * @m: the model
  * @training_data: the training data
- * @training_len: length of @training_data array
  * @derivatives: output for all derivates, format is as followed:
  * 	each layer:
  * 		flattened matrix weights, row major order
@@ -79,10 +84,15 @@ struct image {
  * 	... repeat for each layer
  * 	must be long enough, length = total number weights and biases
  * @errors: for use by the function, allows not calling malloc() in the function
- * 	length must be at least total number of neurons (except for input layer)
+ * 	length must be at least total number of neurons
+ *	the data in this must be set to 0
+ * @num_neurons: the total number of neurons in the entire model
+ * 	(also the length of the @errors array)
+ * @expected: for use by the function, should have length of number of neurons
+ * 	in last layer
  * @transposed_weights: array of all the transpose matricies of the weights
  * @indicies: array of all indicies into the @training_data array,
- * 	should be of length @training_len, used for shuffling reasons
+ * 	should be same length as @training_data, used for shuffling reasons
  * 	(much easier to shuffle array of integers than it is an array of
  * 	structs)
  * @min: the minimum index into the array @indicies to start at
@@ -91,14 +101,51 @@ struct image {
 struct train_params {
 	struct model *m;
 	const struct image *training_data;
-	const size_t training_len;
 	double *derivatives;
 	double *errors;
+	size_t num_neurons;
+	double *expected;
 	const struct matrix *transposed_weights;
 	const size_t *indicies;
 	const size_t min;
 	const size_t max;
 };
+
+/**
+ * char_to_output_neuron() - given a character, return the output neuron index
+ * @ch: the character
+ * @result: the result
+ *
+ * this function gets the index of the last layer neuron that corrosponds to the
+ * char ch, and puts it in *result
+ *
+ * Return: -1 if ch is invalid, 0 for success
+ */
+static inline int char_to_output_neuron(size_t *result, const char ch)
+{
+	if (ch < '0' || ch > '9')
+		return -1;
+
+	*result = ch - 0x30;
+	return 0;
+}
+
+/**
+ * output_neuron_to_char() - the inverse of the above function
+ * @ch: the result
+ * @neur: the index of the neuron
+ *
+ * See the above's function documentation
+ *
+ * Return: -1 if neur is invalid, 0 for success
+ */
+static inline int output_neuron_to_char(char *ch, const size_t neur)
+{
+	if (neur > 9)
+		return -1;
+	*ch = neur + 0x30;
+	return 0;
+}
 
 /**
  * layer_init() - initializer a layer

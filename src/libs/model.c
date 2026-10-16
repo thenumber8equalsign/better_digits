@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <math.h>
 #include <stdint.h>
 #include <config.h>
@@ -224,7 +225,47 @@ int model_compute(struct model *m, const struct image *img)
 	return 0;
 }
 
+static inline int single_back_propagate(const struct image *img,
+					struct train_params *params)
+{
+	/* \delta^L = \left(a^L - y\right) \odot \sigma'\left(z^L\right) */
+	/* \delta^l = \left(\left(w^{l+1}\right)\delta^{l+1}\right) */
+	/*	\odot \sigma'\left(z^l\right) */
+	/* \frac{\partial C}{\partial b_j^l} = \delta_j^l */
+	/*	the derivative with respect to bias is the error */
+	/* \frac{\partial C}{\partial w_{jk}^l} = a_k^{l - 1} \delta_j^l */
+	return 0;
+}
+
 int model_train(struct train_params *params)
 {
+	ssize_t ret;
+	struct model *m = params->m;
+	/* \delta^L = \left(a^L - y\right) \odot \sigma'\left(z^L\right) */
+	/* \delta^l = \left(\left(w^{l+1}\right)\delta^{l+1}\right) */
+	/*	\odot \sigma'\left(z^l\right) */
+	/* \frac{\partial C}{\partial b_j^l} = \delta_j^l */
+	/*	the derivative with respect to bias is the error */
+	/* \frac{\partial C}{\partial w_{jk}^l} = a_k^{l - 1} \delta_j^l */
+	for (size_t i = params->min; i < params->max; ++i) {
+		const struct image *img =
+			&params->training_data[params->indicies[i]];
+		const char label = img->label;
+		const size_t num_outputs = m->layers[m->N - 1].N;
+		size_t out_index;
+
+		assert(!char_to_output_neuron(&out_index, label));
+
+		for (size_t j = 0; j < num_outputs; ++i) {
+			params->expected[j] = 0;
+			if (j == out_index)
+				params->expected[j] = 1;
+		}
+
+		ret = single_back_propagate(img, params);
+		if (ret != 0)
+			return -1;
+	}
+
 	return 0;
 }
