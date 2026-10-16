@@ -1,7 +1,9 @@
+#include <config.h>
+
 #include <assert.h>
+#include <string.h>
 #include <math.h>
 #include <stdint.h>
-#include <config.h>
 #include <model.h>
 #include <matrix.h>
 #include <stddef.h>
@@ -234,6 +236,10 @@ static inline int single_back_propagate(const struct image *img,
 	/* \frac{\partial C}{\partial b_j^l} = \delta_j^l */
 	/*	the derivative with respect to bias is the error */
 	/* \frac{\partial C}{\partial w_{jk}^l} = a_k^{l - 1} \delta_j^l */
+	struct model *m = params->m;
+	struct matrix *errors = params->errors;
+	size_t num_layers = m->N;
+
 	return 0;
 }
 
@@ -265,7 +271,13 @@ int model_train(struct train_params *params)
 		ret = single_back_propagate(img, params);
 		if (ret != 0)
 			return -1;
-	}
 
+		for (size_t j = 0; j < m->N; ++j) {
+			struct matrix *d;
+			d = &m->layers[j].neurons;
+			double *mat = d->data;
+			memset(mat, 0, d->rows * sizeof(double));
+		}
+	}
 	return 0;
 }

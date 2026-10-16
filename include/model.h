@@ -76,18 +76,19 @@ struct image {
 /**
  * struct train_params - parameters to the model_train function
  * @m: the model
+ * @errors: for use by the train function, array of matricies
+ * 	such that its length is the number of layers
+ * 	each matrix must have n rows and 1 column, with n being the number
+ * 	of neurons in that layer.
+ * 	the data in this matrix must be initialized to 0
  * @training_data: the training data
  * @derivatives: output for all derivates, format is as followed:
  * 	each layer:
  * 		flattened matrix weights, row major order
  * 		biases
- * 	... repeat for each layer
+ * 	... repeat for each layer (note that layer 0 is excluded because its
+ * 	input is not dependent on any previous layer)
  * 	must be long enough, length = total number weights and biases
- * @errors: for use by the function, allows not calling malloc() in the function
- * 	length must be at least total number of neurons
- *	the data in this must be set to 0
- * @num_neurons: the total number of neurons in the entire model
- * 	(also the length of the @errors array)
  * @expected: for use by the function, should have length of number of neurons
  * 	in last layer
  * @transposed_weights: array of all the transpose matricies of the weights
@@ -100,10 +101,9 @@ struct image {
  */
 struct train_params {
 	struct model *m;
+	struct matrix *errors;
 	const struct image *training_data;
 	double *derivatives;
-	double *errors;
-	size_t num_neurons;
 	double *expected;
 	const struct matrix *transposed_weights;
 	const size_t *indicies;
