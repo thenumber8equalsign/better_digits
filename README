@@ -1,7 +1,7 @@
 datasets from:
 https://www.nist.gov/itl/products-and-services/emnist-dataset
 
-extract the matlab.zip and place its contents in /emnist
+extract the matlab.zip and place its contents in ./emnist/
 and then run `make all`
 I can't put the datasets here because they are too large for github
 

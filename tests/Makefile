@@ -17,6 +17,8 @@ image: clean _build_dir libs $(BUILD_DIR)/test_image.c.o
 
 clean:
 	-rm -r $(BUILD_DIR)
+	-rm -r matrix.out
+	-rm -r image.out
 
 libs:
 	make -C ../src/libs/
