@@ -13,6 +13,33 @@
 #include <limits.h>
 #include <stdbool.h>
 
+static inline double sigmoid(double x)
+{
+	return 1.0 / (1.0 + exp(-x));
+}
+
+static inline double sigmoid_derivative(double x)
+{
+	return exp(-x) / (exp(-2 * x) + 2 * exp(-x) + 1);
+}
+
+static inline double sigmoid_inverse(double x)
+{
+	double (*ln)(double) = log;
+	return ln(x) - ln(1 - x);
+}
+
+static inline double dot_product(const double *a, const double *b, size_t len)
+{
+	double res;
+
+	res = 0;
+	for (size_t i = 0; i < len; ++i)
+		res += a[i] * b[i];
+
+	return res;
+}
+
 /* floor a to a multiple of b */
 static inline unsigned long floor_to_multiple(unsigned long a, unsigned long b)
 {
@@ -188,6 +215,7 @@ int model_params_init(struct model *m)
 int model_cost(struct model *m, const struct image *img, const double *expctd,
 	       const size_t len, double *cost)
 {
+	/* C = \frac{1}{2}\sum_j \left(y_j - a^L\right)^2 */
 	ssize_t ret;
 
 	*cost = 0;
@@ -203,6 +231,8 @@ int model_cost(struct model *m, const struct image *img, const double *expctd,
 		tmp *= tmp;
 		*cost += tmp;
 	}
+
+	*cost /= 2;
 
 	return 0;
 }
@@ -231,28 +261,75 @@ static inline int single_back_propagate(const struct image *img,
 					struct train_params *params)
 {
 	/* \delta^L = \left(a^L - y\right) \odot \sigma'\left(z^L\right) */
-	/* \delta^l = \left(\left(w^{l+1}\right)\delta^{l+1}\right) */
+	/* \delta^l = \left(\left(w^{l+1}\right)^T\delta^{l+1}\right) */
 	/*	\odot \sigma'\left(z^l\right) */
 	/* \frac{\partial C}{\partial b_j^l} = \delta_j^l */
 	/*	the derivative with respect to bias is the error */
 	/* \frac{\partial C}{\partial w_{jk}^l} = a_k^{l - 1} \delta_j^l */
+
 	struct model *m = params->m;
 	struct matrix *errors = params->errors;
 	size_t num_layers = m->N;
+	size_t index = 0;
+
+	for (size_t j = 0; j < errors[num_layers - 1].rows; ++j) {
+		double *ptr = &errors[num_layers - 1].data[j];
+		double act = m->layers[num_layers - 1].neurons.data[j];
+		double inv = sigmoid_inverse(act);
+		double expc = params->expected[j];
+
+		*ptr = (act - expc) * sigmoid_derivative(inv);
+	}
+
+	for (ssize_t i = num_layers - 2; i > 0; --i) {
+		const double *neurons = m->layers[i].neurons.data;
+		for (size_t j = 0; j < errors[i].rows; ++j) {
+			const size_t cols = params->transposed_weights[i].cols;
+			const double *data = params->transposed_weights[i].data;
+			const double *weight_row = &data[j * cols];
+			const double *next_ers = errors[i + 1].data;
+			const double inv = sigmoid_inverse(neurons[j]);
+
+			assert(cols == errors[i + 1].rows);
+
+			const double dot =
+				dot_product(weight_row, next_ers, cols);
+			errors[i].data[j] = dot * sigmoid_derivative(inv);
+		}
+	}
+
+	for (size_t i = 1; i < num_layers; ++i) {
+		const double *prev_neurons = m->layers[i - 1].neurons.data;
+		const size_t rows = m->layers[i].weights.rows;
+		const size_t cols = m->layers[i].weights.cols;
+
+		/* partial derivative for the weight */
+		for (size_t flat = 0; flat < rows * cols; ++flat) {
+			const size_t j = flat / cols;
+			const size_t k = flat % cols;
+			params->derivatives[index++] =
+				prev_neurons[k] * errors[i].data[j];
+		}
+
+		/* partial derivative for the bias */
+		for (size_t j = 0; j < errors[i].rows; ++j)
+			params->derivatives[index++] = errors[i].data[j];
+	}
 
 	return 0;
 }
 
 int model_train(struct train_params *params)
 {
-	ssize_t ret;
-	struct model *m = params->m;
 	/* \delta^L = \left(a^L - y\right) \odot \sigma'\left(z^L\right) */
-	/* \delta^l = \left(\left(w^{l+1}\right)\delta^{l+1}\right) */
+	/* \delta^l = \left(\left(w^{l+1}\right)^T\delta^{l+1}\right) */
 	/*	\odot \sigma'\left(z^l\right) */
 	/* \frac{\partial C}{\partial b_j^l} = \delta_j^l */
 	/*	the derivative with respect to bias is the error */
 	/* \frac{\partial C}{\partial w_{jk}^l} = a_k^{l - 1} \delta_j^l */
+
+	ssize_t ret;
+	struct model *m = params->m;
 	for (size_t i = params->min; i < params->max; ++i) {
 		const struct image *img =
 			&params->training_data[params->indicies[i]];
@@ -267,6 +344,8 @@ int model_train(struct train_params *params)
 			if (j == out_index)
 				params->expected[j] = 1;
 		}
+
+		model_compute(params->m, img);
 
 		ret = single_back_propagate(img, params);
 		if (ret != 0)

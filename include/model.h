@@ -1,43 +1,12 @@
 #ifndef MODEL_H
 #define MODEL_H
 #include <config.h>
+
 #include <matrix.h>
 #include <stddef.h>
-#include <math.h>
 
 #define IMAGE_WIDTH (28)
 #define IMAGE_HEIGHT (28)
-
-static inline double sigmoid(double x)
-{
-	return 1.0 / (1.0 + exp(-x));
-}
-
-static inline void vectorized_sigmoid(double *out, double *v, size_t len)
-{
-	for (size_t i = 0; i < len; ++i) {
-		out[i] = 1.0 / (1.0 + exp(-v[i]));
-	}
-}
-
-static inline double sigmoid_derivative(double x)
-{
-	return exp(-x) / (exp(-2 * x) + 2 * exp(-x) + 1);
-}
-
-static inline void vectorized_sigmoid_derivative(double *out, double *v,
-						 size_t len)
-{
-	for (size_t i = 0; i < len; ++i) {
-		out[i] = sigmoid_derivative(v[i]);
-	}
-}
-
-static inline double sigmoid_inverse(double x)
-{
-	double (*ln)(double) = log;
-	return ln(x) - ln(1 - x);
-}
 
 /**
  * struct layer - neural network layer
@@ -89,6 +58,7 @@ struct image {
  * 	... repeat for each layer (note that layer 0 is excluded because its
  * 	input is not dependent on any previous layer)
  * 	must be long enough, length = total number weights and biases
+ * 	this is an accumulator, when calling the function, start them all at 0
  * @expected: for use by the function, should have length of number of neurons
  * 	in last layer
  * @transposed_weights: array of all the transpose matricies of the weights

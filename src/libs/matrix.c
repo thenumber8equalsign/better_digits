@@ -1,4 +1,5 @@
 #include <config.h>
+
 #include <matrix.h>
 #include <stddef.h>
 #include <stdlib.h>

@@ -1,5 +1,6 @@
 /* test the images generated */
 #include <config.h>
+
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
