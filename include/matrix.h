@@ -26,6 +26,8 @@ int matrix_init(struct matrix *mat, size_t r, size_t c);
 
 void matrix_free(struct matrix *mat);
 
+int matrix_transpose(struct matrix *res, struct matrix *mat);
+
 int matrix_multiply(struct matrix *result, const struct matrix *a,
 		    const struct matrix *b);
 

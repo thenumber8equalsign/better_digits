@@ -18,6 +18,24 @@ int matrix_init(struct matrix *mat, size_t r, size_t c)
 	return 0;
 }
 
+int matrix_transpose(struct matrix *res, struct matrix *mat)
+{
+	if (res->cols != mat->rows)
+		return DIMENSION_ERROR;
+
+	if (res->rows != mat->cols)
+		return DIMENSION_ERROR;
+
+	for (size_t i = 0; i < res->rows; ++i) {
+		for (size_t j = 0; j < res->cols; ++j) {
+			double m = matrix_get(mat, j, i);
+			matrix_set(res, i, j, m);
+		}
+	}
+
+	return 0;
+}
+
 void matrix_free(struct matrix *mat)
 {
 	if (mat->data != NULL)
