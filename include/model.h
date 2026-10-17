@@ -96,7 +96,8 @@ static inline int char_to_output_neuron(size_t *result, const char ch)
 	if (ch < '0' || ch > '9')
 		return -1;
 
-	*result = ch - 0x30;
+	if (result != NULL)
+		*result = ch - 0x30;
 	return 0;
 }
 
@@ -113,7 +114,9 @@ static inline int output_neuron_to_char(char *ch, const size_t neur)
 {
 	if (neur > 9)
 		return -1;
-	*ch = neur + 0x30;
+
+	if (ch != NULL)
+		*ch = neur + 0x30;
 	return 0;
 }
 

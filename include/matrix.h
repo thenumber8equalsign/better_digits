@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define DIMENSION_ERROR 1
+#define DIMENSION_ERROR (1)
 
 struct matrix {
 	double *data;
