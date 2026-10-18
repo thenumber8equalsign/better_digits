@@ -74,11 +74,12 @@ int main(void)
 	printf("label: %c\n", imgs[img_index].label);
 
 	for (size_t i = 0; i < IMAGE_HEIGHT; ++i) {
+		printf("%3zu ", i);
 		for (size_t j = 0; j < IMAGE_WIDTH; ++j) {
 			char buf[4096];
 			make_gradient(buf, imgs[img_index].img[i][j]);
 			printf("%s", buf);
-			printf(" ");
+			printf("  ");
 			printf("\033[0m");
 		}
 		printf("\n");
