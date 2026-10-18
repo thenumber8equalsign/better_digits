@@ -5,6 +5,9 @@ extract the matlab.zip and place its contents in ./emnist/
 and then run `make all`
 I can't put the datasets here because they are too large for github
 
+also set your terminal background colour include/config.h
+for viewing the images
+
 the image format that the actual C program will use is as follows:
 
 byte 0: label (ASCII character code, NOT an integer (because letters)

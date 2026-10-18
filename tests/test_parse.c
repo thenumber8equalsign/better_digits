@@ -12,9 +12,9 @@
 /* make gradient (my kitty background is 0x212425) */
 void make_gradient(char *buf, double val)
 {
-	uint8_t r1 = 0x21;
-	uint8_t g1 = 0x24;
-	uint8_t b1 = 0x25;
+	uint8_t r1 = TERM_BACKGROUND >> 16 & 0xff;
+	uint8_t g1 = TERM_BACKGROUND >> 8 & 0xff;
+	uint8_t b1 = TERM_BACKGROUND & 0xff;
 
 	uint8_t r2 = 0xff;
 	uint8_t g2 = 0xff;
