@@ -15,10 +15,14 @@ matrix: clean _build_dir libs $(BUILD_DIR)/test_matrix.c.o
 image: clean _build_dir libs $(BUILD_DIR)/test_image.c.o
 	$(CC) -o image.out $(BUILD_DIR)/*.o $(LINK) $(CFLAGS)
 
+parse: clean _build_dir libs $(BUILD_DIR)/test_parse.c.o
+	$(CC) -o parse.out $(BUILD_DIR)/*.o $(LINK) $(CFLAGS)
+
 clean:
 	-rm -r $(BUILD_DIR)
 	-rm -r matrix.out
 	-rm -r image.out
+	-rm -r parse.out
 
 libs:
 	make -C ../src/libs/
