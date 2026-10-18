@@ -1,9 +1,9 @@
-.PHONY: all clean _build_dir _src init
+.PHONY: all clean _build_dir _src init clean_all
 
 export CC = gcc
 export CFLAGS = -std=c99 -O2
 export INCLUDE := $(abspath ./include/)
-export LINK := -lm
+export LINK := -lm -lncurses
 export BUILD_DIR := $(abspath ./build/)
 export RULES := $(abspath rule.mk)
 
@@ -17,9 +17,13 @@ all: data _build_dir _src
 data:
 	python scripts/init.py
 
-clean:
+clean_all:
 	-rm -r $(BUILD_DIR)
 	-rm -r data
+
+clean:
+	-rm -r $(BUILD_DIR)
+
 _src:
 	make -C src/ all
 
