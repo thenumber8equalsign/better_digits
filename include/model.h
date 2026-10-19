@@ -121,6 +121,14 @@ static inline int output_neuron_to_char(char *ch, const size_t neur)
 }
 
 /**
+ * get_num_outputs() - return the number of outputs for this specific program
+ */
+static inline size_t get_num_outputs()
+{
+	return 10;
+}
+
+/**
  * layer_init() - initializer a layer
  * @l: the layer to initialize
  * @N the number of neurons in this layer
@@ -161,6 +169,14 @@ int layer_compute(struct layer *cur, const struct layer *prev);
  * Return: 0 on success, nonzero on error
  */
 int model_init(struct model *m, size_t *num_neurons, size_t n);
+
+/**
+ * model_free() - free a model
+ * @m: the model
+ *
+ * Return: none
+ */
+void model_free(struct model *m);
 
 /**
  * model_params_init() - initialize the parameters

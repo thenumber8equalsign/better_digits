@@ -1,5 +1,6 @@
 #include <config.h>
 
+#include <errno.h>
 #include <limits.h>
 #include <model.h>
 #include <matrix.h>
@@ -161,25 +162,18 @@ outer:
 	}
 }
 
-void train_new_model(WINDOW *w, struct image *train, struct image *test,
-		     size_t train_len, size_t test_len)
+void get_ncurses_user_input(char *buf, size_t buflen, WINDOW *w)
 {
-	/* ask for number of layers */
-	ssize_t ret;
 	int ch;
-	char buf[4096]; /* TODO: re-add my old array code */
 	ssize_t ind;
 
-	ind = 0;
-	memset(buf, 0, sizeof(buf));
-
-	mvwprintw(w, 0, 0, "How many hidden layers should this model have?");
 	wmove(w, 1, 0);
 	echo();
 	curs_set(1);
 	nodelay(w, FALSE);
 	wrefresh(w);
 
+	ind = 0;
 	for (;;) {
 		ch = wgetch(w);
 		if (ch == KEY_BACKSPACE) {
@@ -187,22 +181,94 @@ void train_new_model(WINDOW *w, struct image *train, struct image *test,
 			ind = (ind < 0) ? 0 : ind;
 			buf[ind] = 0;
 			wdelch(w);
-		}
-		if (ch == '\n')
-			break;
-		if (ch % UCHAR_MAX != ch || !isprint(ch))
+			wrefresh(w);
 			continue;
+		} else if (ch == '\n') {
+			break;
+		} else if (ch % UCHAR_MAX != ch || !isprint(ch)) {
+			continue;
+		}
+
+		if (ind >= buflen) {
+			buf[buflen - 1] = 0;
+			break;
+		}
+
 		buf[ind++] = (char)ch;
+
 		wrefresh(w);
 	}
+}
+
+void train_new_model(WINDOW *w, struct image *train, struct image *test,
+		     size_t train_len, size_t test_len)
+{
+	/* ask for number of layers */
+	ssize_t ret;
+	char buf[4096]; /* TODO: re-add my old array code */
+	char *endptr;
+	size_t num_layers;
+	size_t *num_neurons;
+	struct model m;
+
+	endptr = NULL;
+	num_layers = 0;
+	num_neurons = NULL;
+	memset(&m, 0, sizeof(m));
+	memset(buf, 0, sizeof(buf));
+
+	mvwprintw(w, 0, 0, "How many hidden layers should this model have?");
+
+	get_ncurses_user_input(buf, sizeof(buf) / sizeof(char), w);
 
 	werase(w);
 	wrefresh(w);
+
+	num_layers = strtoull(buf, &endptr, 0);
+	/* my jank way of testing if we inputted a negative is SSIZE_MAX */
+	/* even though its not correct cuz we could've typed in a very big */
+	/* +ve */
+	if (*endptr != 0 || num_layers > SSIZE_MAX) {
+		mvwprintw(w, 0, 0, "Error parsing number");
+		return;
+	}
+
+	num_layers += 2; /* add the input/output layers */
+	num_neurons = malloc(num_layers * sizeof(size_t));
+	if (num_neurons == NULL) {
+		int e = errno;
+		werase(w);
+		mvwprintw(w, 0, 0, "malloc: %s", strerror(e));
+		wrefresh(w);
+		return;
+	}
+
+	num_neurons[0] = IMAGE_HEIGHT * IMAGE_WIDTH;
+	num_neurons[num_layers - 1] = get_num_outputs();
+
+	for (size_t i = 1; i < num_layers - 1; ++i) {
+		werase(w);
+		wrefresh(w);
+		mvwprintw(w, 0, 0,
+			  "How many neurons should be in layer "
+			  "layer %zu?",
+			  i);
+		get_ncurses_user_input(buf, sizeof(buf) / sizeof(char), w);
+		num_neurons[i] = strtoull(buf, &endptr, 0);
+		if (*endptr != 0 || num_neurons[i] > SSIZE_MAX) {
+			mvwprintw(w, 0, 0, "Error parsing number");
+			goto cleanup;
+		}
+	}
+
+	ret = model_init(&m, num_neurons, num_layers);
+
+cleanup:
+	model_free(&m);
 	noecho();
 	curs_set(0);
 	nodelay(w, TRUE);
-
-	mvwprintw(w, 0, 0, "%s", buf);
+	free(num_neurons);
 }
 
 int main(int argc, char **argv)

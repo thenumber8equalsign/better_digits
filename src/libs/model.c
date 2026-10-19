@@ -162,6 +162,17 @@ error:
 	return -1;
 }
 
+void model_free(struct model *m)
+{
+	for (size_t i = 0; i < m->N; ++i) {
+		layer_free(&m->layers[i]);
+	}
+
+	free(m->layers);
+	m->layers = NULL;
+	m->N = 0;
+}
+
 int model_params_init(struct model *m)
 {
 	/* LeCun initialization: sample within x \in [-\sqrt{\frac{3}{n_{l-1}}},
