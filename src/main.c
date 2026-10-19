@@ -1,5 +1,6 @@
 #include <config.h>
 
+#include <limits.h>
 #include <model.h>
 #include <matrix.h>
 #include <parsers.h>
@@ -7,16 +8,17 @@
 #include <err.h>
 #include <stdio.h>
 #include <assert.h>
-
 #include <ncurses.h>
-#include <locale.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
+#include <locale.h>
 
 enum operation {
 	OP_ERR,
 	OP_EXIT,
-	OP_TRAIN,
+	OP_TRAINNEW,
+	OP_CONTTRAIN,
 	OP_NOP,
 	OP_TEST,
 	/* there will be more operations, like load params from file & test */
@@ -72,7 +74,10 @@ int prepare_data(struct image **training, struct image **testing,
 
 enum operation prompt_user_for_op(WINDOW *w)
 {
-	const char *opts[] = { "Train new model", "filler" };
+	const char *opts[] = {
+		"Train new model",
+		"Continue training existing model",
+	};
 	size_t opts_len = sizeof(opts) / sizeof(char *);
 	ssize_t selected = 0;
 	enum operation op;
@@ -87,7 +92,7 @@ enum operation prompt_user_for_op(WINDOW *w)
 		else
 			wattroff(w, A_STANDOUT);
 
-		mvwprintw(w, i + 2, 0, "%-20s", opts[i]);
+		mvwprintw(w, i + 2, 0, "%-40s", opts[i]);
 	}
 
 	wrefresh(w);
@@ -133,7 +138,7 @@ enum operation prompt_user_for_op(WINDOW *w)
 				wattron(w, A_STANDOUT);
 			else
 				wattroff(w, A_STANDOUT);
-			mvwprintw(w, i + 2, 0, "%-20s", opts[i]);
+			mvwprintw(w, i + 2, 0, "%-40s", opts[i]);
 		}
 
 		wrefresh(w);
@@ -145,10 +150,10 @@ outer:
 	wattroff(w, A_STANDOUT);
 	switch (selected) {
 	case 0:
-		return OP_TRAIN;
+		return OP_TRAINNEW;
 		break;
 	case 1:
-		return OP_NOP;
+		return OP_CONTTRAIN;
 		break;
 	default:
 		return OP_ERR;
@@ -156,12 +161,57 @@ outer:
 	}
 }
 
-int main(int argc, char **argv)
+void train_new_model(WINDOW *w, struct image *train, struct image *test,
+		     size_t train_len, size_t test_len)
 {
-	size_t training_len;
-	size_t testing_len;
+	/* ask for number of layers */
 	ssize_t ret;
 	int ch;
+	char buf[4096]; /* TODO: re-add my old array code */
+	ssize_t ind;
+
+	ind = 0;
+	memset(buf, 0, sizeof(buf));
+
+	mvwprintw(w, 0, 0, "How many hidden layers should this model have?");
+	wmove(w, 1, 0);
+	echo();
+	curs_set(1);
+	nodelay(w, FALSE);
+	wrefresh(w);
+
+	for (;;) {
+		ch = wgetch(w);
+		if (ch == KEY_BACKSPACE) {
+			--ind;
+			ind = (ind < 0) ? 0 : ind;
+			buf[ind] = 0;
+			wdelch(w);
+		}
+		if (ch == '\n')
+			break;
+		if (ch % UCHAR_MAX != ch || !isprint(ch))
+			continue;
+		buf[ind++] = (char)ch;
+		wrefresh(w);
+	}
+
+	werase(w);
+	wrefresh(w);
+	noecho();
+	curs_set(0);
+	nodelay(w, TRUE);
+
+	mvwprintw(w, 0, 0, "%s", buf);
+}
+
+int main(int argc, char **argv)
+{
+	size_t train_len;
+	size_t test_len;
+	ssize_t ret;
+	int ch;
+	_Bool valid_input;
 
 	enum operation op;
 
@@ -170,7 +220,8 @@ int main(int argc, char **argv)
 
 	WINDOW *w;
 
-	ret = prepare_data(&training, &testing, &training_len, &testing_len);
+	printf("Please wait while training and testing data is parsed\n");
+	ret = prepare_data(&training, &testing, &train_len, &test_len);
 	if (ret != 0)
 		return ret;
 
@@ -187,54 +238,42 @@ int main(int argc, char **argv)
 	op = prompt_user_for_op(w);
 
 	switch (op) {
-	case OP_TRAIN:
-		mvwprintw(w, 0, 0, "You have chosen to train a new model");
+	case OP_TRAINNEW:
+		train_new_model(w, training, testing, train_len, test_len);
+		break;
+	case OP_CONTTRAIN:
 		break;
 	case OP_NOP:
-		mvwprintw(w, 0, 0, "You have chosen my super secret option");
-		break;
-	case OP_ERR:
-		mvwprintw(w, 0, 0, "i have no idea what's goin' on");
 		break;
 	case OP_TEST:
-		mvwprintw(w, 0, 0, "You have chosen to test the model");
 		break;
 	case OP_EXIT:
+		goto cleanup;
+		break;
+	case OP_ERR:
 	default:
 		mvwprintw(w, 0, 0, "i have no idea what's goin' on");
+		goto prompt_for_exit;
 		break;
 	}
 
-	/* temporary learning stuff */
-	mvwprintw(w, 1, 0, "type \"quit\" and then press enter to exit");
+prompt_for_exit:
+	mvwprintw(w, 1, 0, "press q to exit");
 	wmove(w, 2, 0);
-	curs_set(1);
-	echo();
-	char buf[4096] = {0};
-	size_t ind = 0;
+	wrefresh(w);
 	for (;;) {
 		ch = wgetch(w);
-		if (ch < 0 || ch == ERR || ch % 256 != ch)
-			continue;
-
-		if (ch == '\n') {
-			wmove(w, 2, 0);
-			wclrtoeol(w);
-			if (strcmp(buf, "quit") == 0)
-				break;
-			memset(buf, 0, sizeof(buf));
-			ind = 0;
-		}
-
-		if (!isprint(ch))
-			continue;
-
-		buf[ind++] = (char)ch;
+		if (ch == 'q')
+			break;
 	}
 
+cleanup:
 	delwin(w);
 	endwin();
 	free(training);
 	free(testing);
+	training = NULL;
+	testing = NULL;
+
 	return 0;
 }
