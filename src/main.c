@@ -1,5 +1,6 @@
 #include <config.h>
 
+#include <unistd.h>
 #include <errno.h>
 #include <limits.h>
 #include <model.h>
@@ -185,7 +186,7 @@ void get_ncurses_user_input(char *buf, size_t buflen, WINDOW *w)
 			continue;
 		} else if (ch == '\n') {
 			break;
-		} else if (ch % UCHAR_MAX != ch || !isprint(ch)) {
+		} else if (ch % (UCHAR_MAX + 1) != ch || !isprint(ch)) {
 			continue;
 		}
 
@@ -204,13 +205,16 @@ void train_new_model(WINDOW *w, struct image *train, struct image *test,
 		     size_t train_len, size_t test_len)
 {
 	/* ask for number of layers */
+	int ch;
 	ssize_t ret;
 	char buf[4096];
 	char *endptr;
 	size_t num_layers;
 	size_t *num_neurons;
+	double cur_cost;
 	struct model m;
 
+	cur_cost = 0;
 	endptr = NULL;
 	num_layers = 0;
 	num_neurons = NULL;
@@ -262,6 +266,24 @@ void train_new_model(WINDOW *w, struct image *train, struct image *test,
 	}
 
 	ret = model_init(&m, num_neurons, num_layers);
+	if (ret != 0) {
+		werase(w);
+		mvwprintw(w, 0, 0, "error");
+		wrefresh(w);
+		noecho();
+		curs_set(0);
+		nodelay(w, TRUE);
+		free(num_neurons);
+		return;
+	}
+
+	ret = model_params_init(&m);
+	if (ret != 0) {
+		werase(w);
+		mvwprintw(w, 0, 0, "error");
+		wrefresh(w);
+		goto cleanup;
+	}
 
 	werase(w);
 	wrefresh(w);
@@ -271,7 +293,24 @@ void train_new_model(WINDOW *w, struct image *train, struct image *test,
 	nodelay(w, TRUE);
 
 	/* TODO: finish */
+	for (size_t i = 0;; ++i) {
+		ch = wgetch(w);
 
+		if (ch == 'q')
+			break;
+
+		if (i % 1000000 == 0) {
+			werase(w);
+			mvwprintw(w, 0, 0, "Current cost %lf", cur_cost);
+			mvwprintw(w, 1, 0, "press q to exit");
+			wrefresh(w);
+			++cur_cost;
+		}
+	}
+
+	werase(w);
+	mvwprintw(w, 0, 0, "dfguishduighsdfghsifdhgiuhsa");
+	wrefresh(w);
 cleanup:
 	model_free(&m);
 	noecho();
