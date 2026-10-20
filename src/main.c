@@ -205,7 +205,7 @@ void train_new_model(WINDOW *w, struct image *train, struct image *test,
 {
 	/* ask for number of layers */
 	ssize_t ret;
-	char buf[4096]; /* TODO: re-add my old array code */
+	char buf[4096];
 	char *endptr;
 	size_t num_layers;
 	size_t *num_neurons;
@@ -250,7 +250,7 @@ void train_new_model(WINDOW *w, struct image *train, struct image *test,
 		werase(w);
 		wrefresh(w);
 		mvwprintw(w, 0, 0,
-			  "How many neurons should be in layer "
+			  "How many neurons should be in "
 			  "layer %zu?",
 			  i);
 		get_ncurses_user_input(buf, sizeof(buf) / sizeof(char), w);
@@ -262,6 +262,15 @@ void train_new_model(WINDOW *w, struct image *train, struct image *test,
 	}
 
 	ret = model_init(&m, num_neurons, num_layers);
+
+	werase(w);
+	wrefresh(w);
+
+	noecho();
+	curs_set(0);
+	nodelay(w, TRUE);
+
+	/* TODO: finish */
 
 cleanup:
 	model_free(&m);
